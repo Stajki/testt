@@ -1,0 +1,49 @@
+version: '3'
+
+networks:
+    online-shop:
+
+services:
+    nginx:
+        image: nginx:stable-alpine
+        container_name: nginx
+        ports:
+            - "80:80"
+        volumes:
+            - ./..:/var/www/vhost
+            - ./config/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php
+            - mariadb
+        networks:
+            - online-shop
+
+    mariadb:
+        image: mariadb:latest
+        container_name: mariadb
+        restart: unless-stopped
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./config/mariadb:/var/lib/mysql
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_ROOT_PASSWORD:
+            MYSQL_PASSWORD:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        networks:
+            - online-shop
+
+    php:
+        build:
+            context: ./config/php
+            dockerfile: Dockerfile
+        container_name: php
+        volumes:
+            - ./..:/var/www/vhost
+            - ./../vendor:/var/www/vhost/vendor:cached
+        ports:
+            - "9000:9000"
+        networks:
+            - online-shop
